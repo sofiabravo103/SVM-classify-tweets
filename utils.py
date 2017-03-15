@@ -4,6 +4,24 @@ from models.intention import IntentionModel
 from preprocessors.twitter_spanish import TwitterPreprocessingInSpanish
 
 
+def get_source_from_csv(filename, csv_content_relevance=[1, 0, 2], delimiter=';'):
+    """
+    Get information to train AIManager from a csv file. The paramenter
+    csv_content_relevance contains a list with 1 or 0 to indicate which
+    colums to parse from csv. 1 indicates the position of the ids, 2
+    indicates the position of the annotation. All 0's will be ignored.
+    """
+    ids_column = csv_content_relevance.index(1)
+    annotation_column = csv_content_relevance.index(2)
+    csv_file = open(filename)
+    source_info = []
+    for line in csv_file:
+        t_id = line.split(delimiter)[ids_column]
+        t_ann = int(line.split(delimiter)[annotation_column])
+        source_info.append((t_id, t_ann, ))
+    return source_info
+
+
 class AIManager():
     def __init__(self, source_info, api_info, test_size=0.1):
         """
@@ -16,7 +34,9 @@ class AIManager():
         annotation_list = []
         text_list = []
         random.shuffle(source_info)
-        for t_id, annotation in source_info:
+        total = len(source_info)
+        for i, (t_id, annotation) in enumerate(source_info):
+            print('\r{0}% processed'.format((i+1) * 100 / total), end="")
             text_list.append(self.preprocessor.extract_and_clean_single(t_id))
             annotation_list.append(annotation)
 
