@@ -4,21 +4,44 @@ from models.intention import IntentionModel
 from preprocessors.twitter_spanish import TwitterPreprocessingInSpanish
 
 
+def get_api_info_from_csv(filename, csv_content_relevance=[1, 2, 3, 4], delimiter=';'):
+    """
+    Get information to initialize twitter api from a csv file. The paramenter
+     csv_content_relevance contains a list with 1-4 to indicate which colums
+     contain the api info. 1 will indicate the consumer_key, 2 will indicate
+     the consumer_secret, 3 will indicate access_token_key and 4 will indicate
+     the access_token_secret. All 0's will be ignored. Only the first line
+     will be parsed.
+    """
+    ck = csv_content_relevance.index(1)
+    cs = csv_content_relevance.index(2)
+    atk = csv_content_relevance.index(3)
+    ats = csv_content_relevance.index(4)
+    api_info = {}
+    with open(filename) as csv_file:
+        line = csv_file.readline()
+        api_info[consumer_key] = line.split(delimiter)[ck]
+        api_info[consumer_secret] = line.split(delimiter)[cs]
+        api_info[access_token_key] = line.split(delimiter)[atk]
+        api_info[access_token_secret] = line.split(delimiter)[ats]
+    return api_info
+
+
 def get_source_from_csv(filename, csv_content_relevance=[1, 0, 2], delimiter=';'):
     """
     Get information to train AIManager from a csv file. The paramenter
-    csv_content_relevance contains a list with 1 or 0 to indicate which
-    colums to parse from csv. 1 indicates the position of the ids, 2
-    indicates the position of the annotation. All 0's will be ignored.
+     csv_content_relevance contains a list with 1 or 0 to indicate which
+     colums to parse from csv. 1 indicates the position of the ids, 2
+     indicates the position of the annotation. All 0's will be ignored.
     """
     ids_column = csv_content_relevance.index(1)
     annotation_column = csv_content_relevance.index(2)
-    csv_file = open(filename)
     source_info = []
-    for line in csv_file:
-        t_id = line.split(delimiter)[ids_column]
-        t_ann = int(line.split(delimiter)[annotation_column])
-        source_info.append((t_id, t_ann, ))
+    with open(filename) as csv_file:
+        for line in csv_file:
+            t_id = line.split(delimiter)[ids_column]
+            t_ann = int(line.split(delimiter)[annotation_column])
+            source_info.append((t_id, t_ann, ))
     return source_info
 
 
