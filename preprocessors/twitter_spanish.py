@@ -19,26 +19,49 @@ class TwitterPreprocessingInSpanish():
                 access_token_key=api_info['access_token_key'],
                 access_token_secret=api_info['access_token_secret']
             )
-            print(self.api.VerifyCredentials())
+            self.api.VerifyCredentials()
 
-    def extract_and_clean_single(self, tweet_id):
+    @staticmethod
+    def rate_limit_exceeded(error):
+        for e in error.args[0]:
+            if e['code'] == 88:
+                return True
+        return False
+
+    @staticmethod
+    def giving_up_error(error):
+        for e in error.args[0]:
+            if e['code'] in [144, 179]:
+                return "{} ({})".format(e['message'], e['code'])
+        return None
+
+    def extract_and_clean_single(self, tweet_id, display_progress=None):
         """
         Extract text from the Twitter API and return the preprocessed text
         """
+        if display_progress:
+            progress = '[{}%]: '.format(round(display_progress, 2))
+        else:
+            progress = ''
+        base_msg = '\r{}Extracting text from twitter api... '.format(progress)
         successfull = False
-        print('Extrating text from twitter api...')
+        print(base_msg, end="")
         while not successfull:
             try:
                 json_tweet = self.api.GetStatus(tweet_id).AsDict()
             except twitter.error.TwitterError as e:
-                if e[0][0]['code'] == 88:
+                giving_up_msg = TwitterPreprocessingInSpanish.giving_up_error(e)
+                if giving_up_msg:
+                    print('{}{}'.format(base_msg, giving_up_msg))
+                    return None
+                elif TwitterPreprocessingInSpanish.rate_limit_exceeded(e):
                     successfull = False
-                    print('\rRate limit exceeded, I will sleep now.')
+                    print('{}Rate limit exceeded, sleeping'.format(base_msg))
                     time.sleep(960)
-                print('\rRetrying...')
+
+                print('{}Retrying'.format(base_msg))
             else:
                 successfull = True
-                print('\rDone.')
 
         return TwitterPreprocessingInSpanish.clean(json_tweet['text'])
 

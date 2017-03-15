@@ -1,4 +1,4 @@
-from generic import IAModel
+from .generic import IAModel
 from sklearn.naive_bayes import MultinomialNB
 
 

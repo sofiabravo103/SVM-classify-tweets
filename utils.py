@@ -1,17 +1,16 @@
 import random
-from feature_extractors.bag_of_words import BagOfWords
-from models.intention import IntentionModel
-from preprocessors.twitter_spanish import TwitterPreprocessingInSpanish
+from .feature_extractors.bag_of_words import BagOfWords
+from .models.intention import IntentionModel
+from .preprocessors.twitter_spanish import TwitterPreprocessingInSpanish
 
 
-def get_api_info_from_csv(filename, csv_content_relevance=[1, 2, 3, 4], delimiter=';'):
+def get_api_info_from_csv(filename, csv_content_relevance=[1, 2, 3, 4]):
     """
     Get information to initialize twitter api from a csv file. The paramenter
-     csv_content_relevance contains a list with 1-4 to indicate which colums
-     contain the api info. 1 will indicate the consumer_key, 2 will indicate
+     csv_content_relevance contains a list with 1-4 to indicate which lines
+     which contain the api info. 1 will indicate the consumer_key, 2 will indicate
      the consumer_secret, 3 will indicate access_token_key and 4 will indicate
-     the access_token_secret. All 0's will be ignored. Only the first line
-     will be parsed.
+     the access_token_secret. All 0's will be ignored.
     """
     ck = csv_content_relevance.index(1)
     cs = csv_content_relevance.index(2)
@@ -19,11 +18,11 @@ def get_api_info_from_csv(filename, csv_content_relevance=[1, 2, 3, 4], delimite
     ats = csv_content_relevance.index(4)
     api_info = {}
     with open(filename) as csv_file:
-        line = csv_file.readline()
-        api_info[consumer_key] = line.split(delimiter)[ck]
-        api_info[consumer_secret] = line.split(delimiter)[cs]
-        api_info[access_token_key] = line.split(delimiter)[atk]
-        api_info[access_token_secret] = line.split(delimiter)[ats]
+        lines = csv_file.readlines()
+        api_info['consumer_key'] = lines[ck].rstrip()
+        api_info['consumer_secret'] = lines[cs].rstrip()
+        api_info['access_token_key'] = lines[atk].rstrip()
+        api_info['access_token_secret'] = lines[ats].rstrip()
     return api_info
 
 
@@ -58,11 +57,13 @@ class AIManager():
         text_list = []
         random.shuffle(source_info)
         total = len(source_info)
+        print("\n\n\nBegining extraction process...")
         for i, (t_id, annotation) in enumerate(source_info):
-            print('\r{0}% processed'.format((i+1) * 100 / total), end="")
-            text_list.append(self.preprocessor.extract_and_clean_single(t_id))
+            progress = (i+1) * 100 / total
+            text_list.append(self.preprocessor.
+                extract_and_clean_single(t_id, display_progress=progress))
             annotation_list.append(annotation)
-
+        print("Extraction process completed.")
         test_size = int(len(source_info) * test_size)
         self.test_text_list = text_list[:test_size]
         self.test_annotation_list = annotation_list[:test_size]
